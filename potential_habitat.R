@@ -101,6 +101,10 @@ detections=c(detections,which(counties$NAME_1=="West Virginia"&counties$NAME_2==
 detections=c(detections,which(counties$NAME_1=="New Jersey"&counties$NAME_2=="Middlesex"))
 detections=c(detections,which(counties$NAME_1=="New Jersey"&counties$NAME_2=="Mercer"))
 detections=c(detections,which(counties$NAME_1=="Pennsylvania"&counties$NAME_2=="Centre"))
+detections=c(detections,which(counties$NAME_1=="New York"&counties$NAME_2=="Richmond"))
+detections=c(detections,which(counties$NAME_1=="Maryland"&counties$NAME_2=="Washington"))
+
+type_of_detection=c("off-host/human/sheep","cow","horse","cow","dog","off-host/horse/dog","opossum","off-host/human","NA","dog","dog","white-tailed deer","NA","dog","goats","off-host","white-tailed deer","NA","deer")
 
 
 composite=annual_mean_temp_binary+July_tmin_binary+July_tmax_binary+annual_precip_binary+alt_binary
@@ -132,7 +136,8 @@ July_tmax_temp_at_detections=extract(July_tmax_binary,counties[detections,],fun=
 annual_precip_binary_at_detections=extract(annual_precip_binary,counties[detections,],fun=mean)
 alt_binary_at_detections=extract(alt_binary,counties[detections,],fun=mean)
 
-values_for_detections=cbind(counties$NAME_1[detections],counties$NAME_2[detections],composite_values_at_detections,annual_mean_temp_at_detections,July_tmin_temp_at_detections,July_tmax_temp_at_detections,annual_precip_binary_at_detections,alt_binary_at_detections)
+
+values_for_detections=cbind(counties$NAME_1[detections],counties$NAME_2[detections],composite_values_at_detections,annual_mean_temp_at_detections,July_tmin_temp_at_detections,July_tmax_temp_at_detections,annual_precip_binary_at_detections,alt_binary_at_detections,type_of_detection)
 values_for_detections=as.data.frame(values_for_detections)
 names(values_for_detections)[1]="State"
 names(values_for_detections)[2]="County"
@@ -142,6 +147,7 @@ names(values_for_detections)[5]="July min temp"
 names(values_for_detections)[6]="July max temp"
 names(values_for_detections)[7]="Annual total precip"
 names(values_for_detections)[8]="Altitude"
+names(values_for_detections)[9]="Detection type"
 
 o=order(values_for_detections$`Composite score`,decreasing=TRUE)
 values_for_detections=values_for_detections[o,]
@@ -156,7 +162,7 @@ values_for_detections$`July min temp`=as.numeric(as.character(values_for_detecti
 values_for_detections$`July max temp`=as.numeric(as.character(values_for_detections$`July max temp`))
 values_for_detections$`Annual total precip`=as.numeric(as.character(values_for_detections$`Annual total precip`))
 values_for_detections$Altitude=as.numeric(as.character(values_for_detections$Altitude))
-values_for_detections %>% knitr::kable(digits=3,row.names=FALSE) %>% write2pdf(paste0(tmpdir,"/detections_table.pdf"),quiet=TRUE)
+values_for_detections %>% knitr::kable(digits=3,row.names=FALSE) %>% write2word(paste0(tmpdir,"/detections_table.doc"),quiet=TRUE)
 
 
 threshold=mean(composite_values_at_detections)
@@ -195,7 +201,7 @@ values_for_states$`July min temp`=as.numeric(as.character(values_for_states$`Jul
 values_for_states$`July max temp`=as.numeric(as.character(values_for_states$`July max temp`))
 values_for_states$`Annual total precip`=as.numeric(as.character(values_for_states$`Annual total precip`))
 values_for_states$Altitude=as.numeric(as.character(values_for_states$Altitude))
-values_for_states %>% knitr::kable(digits=3,row.names=FALSE) %>% write2pdf(paste0(tmpdir,"/test.kable.pdf"),quiet=TRUE)
+values_for_states %>% knitr::kable(digits=3,row.names=FALSE) %>% write2word(paste0(tmpdir,"/state_suitability.doc"),quiet=TRUE)
 
 
 prop_level_five_states=length(which(composite_values_per_state>4))
@@ -277,6 +283,9 @@ HL_suitable_counties=which(new_cattle$HL_suitability>threshold)
 sum(new_cattle$DATA[HL_suitable_counties],na.rm=TRUE)
 #hist(new_cattle$DATA[which(new_cattle$HL_suitability>threshold)])
 HL_suitable_counties_w_lots_cattle=which(new_cattle$DATA>10000&new_cattle$HL_suitability>threshold)
+sum(new_cattle$DATA[HL_suitable_counties_w_lots_cattle],na.rm=TRUE)
+length(HL_suitable_counties_w_lots_cattle)
+
 counties_index_for_HL_suitable_counties_w_lots_cattle=unlist(lapply(HL_suitable_counties_w_lots_cattle,function(x) which(counties$GEO==new_cattle$GEO[x])))
 states_wo_Alaska=states[-which(states$NAME_1=="Alaska"),]
 plot(states_wo_Alaska)
@@ -284,6 +293,13 @@ plot(states_wo_Alaska)
 plot(counties[counties_index_for_HL_suitable_counties_w_lots_cattle,],col="red",add=TRUE)
 #plot(Canada,add=TRUE)
 #plot(Mexico,add=TRUE)
+length(which(new_cattle$State[HL_suitable_counties_w_lots_cattle]=="California"))
+new_cattle$DATA[which(new_cattle$State=="Washington"&new_cattle$DATA>10000&new_cattle$HL_suitability>threshold)]
+new_cattle$County[which(new_cattle$State=="Washington"&new_cattle$DATA>10000&new_cattle$HL_suitability>threshold)]
+new_cattle$HL_suitability[which(new_cattle$State=="Washington"&new_cattle$DATA>10000&new_cattle$HL_suitability>threshold)]
+new_cattle$DATA[which(new_cattle$State=="Oregon"&new_cattle$DATA>10000&new_cattle$HL_suitability>threshold)]
+new_cattle$County[which(new_cattle$State=="Oregon"&new_cattle$DATA>10000&new_cattle$HL_suitability>threshold)]
+new_cattle$HL_suitability[which(new_cattle$State=="Oregon"&new_cattle$DATA>10000&new_cattle$HL_suitability>threshold)]
 
 #reading in sheep data
 sheep=read.csv("sheep_lambs_by_county.csv",header=TRUE)
@@ -353,9 +369,19 @@ HL_suitable_counties=which(new_sheep$HL_suitability>threshold)
 sum(new_sheep$DATA[HL_suitable_counties],na.rm=TRUE)
 #hist(new_sheep$DATA[which(new_sheep$HL_suitability>threshold)])
 HL_suitable_counties_w_lots_sheep=which(new_sheep$DATA>1000&new_sheep$HL_suitability>threshold)
+sum(new_sheep$DATA[HL_suitable_counties_w_lots_sheep],na.rm=TRUE)
+length(HL_suitable_counties_w_lots_sheep)
+length(unique(new_sheep$State[HL_suitable_counties_w_lots_sheep]))
 counties_index_for_HL_suitable_counties_w_lots_sheep=unlist(lapply(HL_suitable_counties_w_lots_sheep,function(x) which(counties$GEO==new_sheep$GEO[x])))
 plot(states_wo_Alaska)
 #plot(US,xlim=c(-170,-35),ylim=c(14,90))
 plot(counties[counties_index_for_HL_suitable_counties_w_lots_sheep,],col="red",add=TRUE)
 #plot(Canada,add=TRUE)
 #plot(Mexico,add=TRUE)
+length(which(new_sheep$State[HL_suitable_counties_w_lots_sheep]=="California"))
+new_sheep$DATA[which(new_sheep$State=="Washington"&new_sheep$DATA>1000&new_sheep$HL_suitability>threshold)]
+new_sheep$County[which(new_sheep$State=="Washington"&new_sheep$DATA>1000&new_sheep$HL_suitability>threshold)]
+new_sheep$HL_suitability[which(new_sheep$State=="Washington"&new_sheep$DATA>1000&new_sheep$HL_suitability>threshold)]
+new_sheep$DATA[which(new_sheep$State=="Oregon"&new_sheep$DATA>1000&new_sheep$HL_suitability>threshold)]
+new_sheep$County[which(new_sheep$State=="Oregon"&new_sheep$DATA>1000&new_sheep$HL_suitability>threshold)]
+new_sheep$HL_suitability[which(new_sheep$State=="Oregon"&new_sheep$DATA>1000&new_sheep$HL_suitability>threshold)]
